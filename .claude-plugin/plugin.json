@@ -1,0 +1,18 @@
+{
+  "name": "copilot-status-bar",
+  "version": "0.1.0",
+  "description": "A rich status line for GitHub Copilot CLI showing context-window progress, current task, premium-request count, estimated cost, and code-change deltas.",
+  "author": {
+    "name": "softienerd"
+  },
+  "homepage": "https://github.com/softienerd/copilot-status-bar",
+  "repository": "https://github.com/softienerd/copilot-status-bar",
+  "license": "MIT",
+  "keywords": [
+    "copilot",
+    "copilot-cli",
+    "statusline",
+    "status-bar",
+    "context-window"
+  ]
+}
