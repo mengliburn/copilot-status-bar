@@ -123,7 +123,8 @@ session, taken straight from the Copilot status payload — it is the actual
 metered figure, not an estimate. The script prefers the CLI-provided
 `ai_used.formatted` string and falls back to deriving credits from
 `ai_used.total_nano_aiu` (1 AI Credit = 1,000,000,000 nano-AIU). The segment is
-omitted when no credits have been spent yet (e.g. at session start).
+always shown — including at session start, where it reads `0 AIC` until usage
+accrues.
 
 ## Uninstall
 

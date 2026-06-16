@@ -105,14 +105,11 @@ process.stdin.on('end', () => {
               : credits >= 1  ? credits.toFixed(2).replace(/0+$/, '').replace(/\.$/, '')
               :                 credits.toFixed(3).replace(/0+$/, '').replace(/\.$/, '');
     }
-    // Hide the segment when it represents zero usage, whether the value came
-    // from the numeric fallback ('0') or a preformatted string like '0.00'.
-    if (aicText) {
-      const aicValue = parseFloat(aicText);
-      if (!(Number.isFinite(aicValue) && aicValue === 0)) {
-        usage += ` \u2502 \x1b[36m${aicText} AIC\x1b[0m`;
-      }
-    }
+    // Always show the AIC segment — including at session start when usage is
+    // still 0 — so the credit meter is consistently visible. Fall back to '0'
+    // when the payload carries no ai_used value yet.
+    if (aicText === null) aicText = '0';
+    usage += ` \u2502 \x1b[36m${aicText} AIC\x1b[0m`;
 
     const added = data.cost?.total_lines_added || 0;
     const removed = data.cost?.total_lines_removed || 0;
