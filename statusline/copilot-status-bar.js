@@ -25,7 +25,7 @@ function ensureDirSecure(dir) {
 try {
   ensureDirSecure(SAFE_CACHE_DIR);
 } catch (err) {
-  process.stderr.write('[cop-statusline] cache dir: ' + (err && err.message || err) + '\n');
+  process.stderr.write('[copilot-status-bar] cache dir: ' + (err && err.message || err) + '\n');
 }
 
 let input = '';

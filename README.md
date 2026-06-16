@@ -62,14 +62,14 @@ pwsh -NoProfile -File scripts\install.ps1
 
 The installer:
 
-1. Copies `statusline/cop-statusline.js` to `~/.copilot/hooks/cop-statusline.js`
+1. Copies `statusline/copilot-status-bar.js` to `~/.copilot/hooks/copilot-status-bar.js`
 2. Adds (or updates) the `statusLine` block in `~/.copilot/settings.json`:
 
    ```json
    {
      "statusLine": {
        "type": "command",
-       "command": "~/.copilot/hooks/cop-statusline.js",
+       "command": "~/.copilot/hooks/copilot-status-bar.js",
        "padding": 0
      }
    }
@@ -84,7 +84,7 @@ The installer:
    {
      "statusLine": {
        "type": "command",
-       "command": "node \"C:/Users/<you>/.copilot/hooks/cop-statusline.js\"",
+       "command": "node \"C:/Users/<you>/.copilot/hooks/copilot-status-bar.js\"",
        "padding": 0
      }
    }
@@ -101,7 +101,7 @@ Restart `copilot` to see the new status line.
 
 ## How it works
 
-Copilot CLI invokes the configured `statusLine.command` after every turn and pipes a JSON status payload to its stdin. `cop-statusline.js` parses that payload and writes a single ANSI-formatted line to stdout. All errors are swallowed silently — the status line should never break the UI.
+Copilot CLI invokes the configured `statusLine.command` after every turn and pipes a JSON status payload to its stdin. `copilot-status-bar.js` parses that payload and writes a single ANSI-formatted line to stdout. All errors are swallowed silently — the status line should never break the UI.
 
 Key fields consumed:
 
@@ -180,7 +180,7 @@ Notes:
 ## Uninstall
 
 1. Remove the `statusLine` block from `~/.copilot/settings.json`
-2. `rm ~/.copilot/hooks/cop-statusline.js`
+2. `rm ~/.copilot/hooks/copilot-status-bar.js`
 3. (If installed as a plugin) `> /plugin uninstall copilot-status-bar` inside `copilot`
 
 ## License

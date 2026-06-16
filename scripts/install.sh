@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Install copilot-status-bar as your Copilot CLI status line.
 #
-# - Copies statusline/cop-statusline.js into ~/.copilot/hooks/
+# - Copies statusline/copilot-status-bar.js into ~/.copilot/hooks/
 # - Patches ~/.copilot/settings.json to point statusLine at the script
 #
 # Re-runnable: it backs up settings.json to settings.json.bak before editing
@@ -10,10 +10,10 @@
 set -euo pipefail
 
 PLUGIN_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-SCRIPT_SRC="${PLUGIN_DIR}/statusline/cop-statusline.js"
+SCRIPT_SRC="${PLUGIN_DIR}/statusline/copilot-status-bar.js"
 HOOKS_DIR="${HOME}/.copilot/hooks"
 SETTINGS="${HOME}/.copilot/settings.json"
-DEST="${HOOKS_DIR}/cop-statusline.js"
+DEST="${HOOKS_DIR}/copilot-status-bar.js"
 
 if [ ! -f "${SCRIPT_SRC}" ]; then
   echo "error: ${SCRIPT_SRC} not found" >&2
@@ -29,7 +29,7 @@ if [ ! -f "${SETTINGS}" ]; then
 {
   "statusLine": {
     "type": "command",
-    "command": "~/.copilot/hooks/cop-statusline.js",
+    "command": "~/.copilot/hooks/copilot-status-bar.js",
     "padding": 0
   }
 }
@@ -46,7 +46,7 @@ const file = process.argv[2];
 const cfg = JSON.parse(fs.readFileSync(file, 'utf8'));
 cfg.statusLine = {
   type: 'command',
-  command: '~/.copilot/hooks/cop-statusline.js',
+  command: '~/.copilot/hooks/copilot-status-bar.js',
   padding: 0,
 };
 fs.writeFileSync(file, JSON.stringify(cfg, null, 2) + '\n');
@@ -57,7 +57,7 @@ else
   cat >&2 <<EOF
   "statusLine": {
     "type": "command",
-    "command": "~/.copilot/hooks/cop-statusline.js",
+    "command": "~/.copilot/hooks/copilot-status-bar.js",
     "padding": 0
   }
 EOF
