@@ -15,7 +15,7 @@ Example output:
 ![copilot-status-bar example](./statusbar.png)
 
 ```
-deploy-api │ copilot-status-bar  ██████░░░░ 58%  │ 12 req │ 12.8 AIC │ +124 -37
+deploy-api │ copilot-status-bar █████░░░░░ 58% │ 12 req │ 12.8 AIC │ +124 -37
 ```
 
 ## Install

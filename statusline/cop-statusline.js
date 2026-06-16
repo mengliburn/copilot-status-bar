@@ -105,8 +105,13 @@ process.stdin.on('end', () => {
               : credits >= 1  ? credits.toFixed(2).replace(/0+$/, '').replace(/\.$/, '')
               :                 credits.toFixed(3).replace(/0+$/, '').replace(/\.$/, '');
     }
-    if (aicText && aicText !== '0') {
-      usage += ` \u2502 \x1b[36m${aicText} AIC\x1b[0m`;
+    // Hide the segment when it represents zero usage, whether the value came
+    // from the numeric fallback ('0') or a preformatted string like '0.00'.
+    if (aicText) {
+      const aicValue = parseFloat(aicText);
+      if (!(Number.isFinite(aicValue) && aicValue === 0)) {
+        usage += ` \u2502 \x1b[36m${aicText} AIC\x1b[0m`;
+      }
     }
 
     const added = data.cost?.total_lines_added || 0;
