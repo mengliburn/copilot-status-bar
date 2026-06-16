@@ -4,7 +4,7 @@
 // ANSI-formatted status line to stdout. Designed to be wired up via
 // settings.json -> statusLine.command.
 //
-// Layout: [remote] [task │] directory │ context bar │ premium req │ $cost │ +added/-removed
+// Layout: [remote] [task │] directory │ context bar │ premium req │ AIC │ +added/-removed
 
 const fs = require('fs');
 const path = require('path');
@@ -88,61 +88,25 @@ process.stdin.on('end', () => {
       usage += ` \u2502 \x1b[1;37m${premium} req\x1b[0m`;
     }
 
-    // ── Estimated $ cost at Anthropic list prices ──────────────────────
-    // Copilot is subscription-based, so this is "what these tokens WOULD
-    // cost at Anthropic API list price" — useful as a relative budget
-    // signal. Caveat: cumulative tokens are summed across all models used
-    // this session; we apply the *currently selected* model's rate.
-    // Per-MTok rates from https://www.anthropic.com/pricing
-    const PRICING = {
-      // [input, output, cacheRead, cacheWrite]  in $/MTok
-      'claude-opus':       [15.00, 75.00, 1.50, 18.75],
-      'claude-sonnet':     [ 3.00, 15.00, 0.30,  3.75],
-      'claude-haiku':      [ 1.00,  5.00, 0.10,  1.25],
-      // GPT pricing for completeness (per OpenAI list)
-      'gpt-5':             [ 1.25, 10.00, 0.13,  0.00],
-      'gpt-5-mini':        [ 0.25,  2.00, 0.03,  0.00],
-    };
-    function rateFor(modelId) {
-      if (!modelId) return null;
-      const id = String(modelId).toLowerCase();
-      // Opus 1M context tier: 2x rates above 200k input tokens — approximate.
-      const oneMillion = id.includes('opus') && id.includes('1m');
-      const rates = id.includes('opus') ? PRICING['claude-opus']
-                  : id.includes('sonnet') ? PRICING['claude-sonnet']
-                  : id.includes('haiku') ? PRICING['claude-haiku']
-                  : id.includes('gpt-5-mini') || id.includes('gpt-5.4-mini') ? PRICING['gpt-5-mini']
-                  : id.includes('gpt-5') ? PRICING['gpt-5']
-                  : null;
-      if (!rates) return null;
-      return oneMillion ? rates.map(r => r * 2) : rates;
+    // ── AI Credits (AIC) consumed this session ─────────────────────────
+    // Copilot CLI reports cumulative GitHub AI Credit usage directly in the
+    // status payload under `ai_used`, so this is the *actual* metered cost —
+    // not a token-based estimate. 1 AI Credit = 1e9 nano-AIU. Prefer the
+    // preformatted string the CLI provides; fall back to computing from
+    // `total_nano_aiu` if only the raw value is present.
+    const NANO_PER_AIC = 1e9;
+    const aiUsed = data.ai_used || {};
+    let aicText = null;
+    if (typeof aiUsed.formatted === 'string' && aiUsed.formatted.trim() !== '') {
+      aicText = aiUsed.formatted.trim();
+    } else if (typeof aiUsed.total_nano_aiu === 'number' && Number.isFinite(aiUsed.total_nano_aiu)) {
+      const credits = Math.max(0, aiUsed.total_nano_aiu) / NANO_PER_AIC;
+      aicText = credits >= 10 ? credits.toFixed(1).replace(/\.0$/, '')
+              : credits >= 1  ? credits.toFixed(2).replace(/0+$/, '').replace(/\.$/, '')
+              :                 credits.toFixed(3).replace(/0+$/, '').replace(/\.$/, '');
     }
-
-    const cw = data.context_window || {};
-    const rates = rateFor(data.model?.id);
-    if (rates) {
-      const inTok    = cw.total_input_tokens       || 0;
-      const outTok   = cw.total_output_tokens      || 0;
-      const cacheR   = cw.total_cache_read_tokens  || 0;
-      const cacheW   = cw.total_cache_write_tokens || 0;
-      // Anthropic billing model:
-      //   billed_input = (inTok - cacheR - cacheW) at standard input rate
-      //   cacheW at cache-write rate (5-min ephemeral)
-      //   cacheR at cache-read rate
-      //   outTok at output rate
-      const standardInput = Math.max(0, inTok - cacheR - cacheW);
-      const cost =
-        (standardInput / 1e6) * rates[0] +
-        (outTok        / 1e6) * rates[1] +
-        (cacheR        / 1e6) * rates[2] +
-        (cacheW        / 1e6) * rates[3];
-      if (cost > 0) {
-        const fmt = cost >= 10 ? cost.toFixed(2)
-                  : cost >= 1  ? cost.toFixed(2)
-                  : cost >= 0.01 ? cost.toFixed(3)
-                  : cost.toFixed(4);
-        usage += ` \u2502 \x1b[36m$${fmt}\x1b[0m`;
-      }
+    if (aicText && aicText !== '0') {
+      usage += ` \u2502 \x1b[36m${aicText} AIC\x1b[0m`;
     }
 
     const added = data.cost?.total_lines_added || 0;
