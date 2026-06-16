@@ -128,12 +128,14 @@ accrues.
 
 ## Persisting status for other tools
 
-Set the `COP_STATUSLINE_OUT` environment variable (to any value) and the status
-line will, on every turn, atomically write a JSON snapshot of the latest status
-to `~/.copilot/cache/statusline-latest.json`. This lets a third-party tool (e.g.
-a tmux/`polybar` widget, a menu-bar app, or a logger) consume the same data the
-bar renders. When the variable is unset, nothing is written and behavior is
-unchanged.
+By default, on every turn the status line atomically writes a JSON snapshot of
+the latest status to `~/.copilot/cache/statusline-latest.json`. This lets a
+third-party tool (e.g. a tmux/`polybar` widget, a menu-bar app, or a logger)
+consume the same data the bar renders.
+
+To disable it, set `COP_STATUSLINE_NO_PERSIST` to any value other than
+`0`/`false`/`no`/`off` (e.g. `export COP_STATUSLINE_NO_PERSIST=1`). When
+disabled, nothing is written and behavior is otherwise unchanged.
 
 The snapshot contains normalized `fields`, the verbatim `raw` Copilot payload,
 and an ISO-8601 `timestamp`:
@@ -168,9 +170,6 @@ Notes:
 - The file lives in the secure `~/.copilot/cache` directory (created `0700`),
   is written atomically (temp file + rename) with `0600` permissions. Writes are
   best-effort — a persistence failure never breaks the status line.
-
-To enable it for every session, export the variable from your shell profile,
-e.g. `export COP_STATUSLINE_OUT=1`.
 
 ## Uninstall
 

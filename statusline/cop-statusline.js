@@ -137,12 +137,15 @@ process.stdin.on('end', () => {
       remote = ` \x1b[36m${data.remote.indicator || '\u2601'}\x1b[0m`;
     }
 
-    // ── Optional persistence for third-party tools ──────────────────────
-    // When COP_STATUSLINE_OUT is set (to any value), atomically write a JSON
-    // snapshot of the latest status each turn to ~/.copilot/cache: normalized
-    // fields, the raw Copilot payload, and a timestamp. Failures never affect
-    // the UI.
-    if (process.env.COP_STATUSLINE_OUT) {
+    // ── Status persistence for third-party tools ────────────────────────
+    // On by default: each turn we atomically write a JSON snapshot of the
+    // latest status to ~/.copilot/cache — normalized fields, the raw Copilot
+    // payload, and a timestamp. Set COP_STATUSLINE_NO_PERSIST (to any value
+    // other than 0/false/no/off) to disable. Failures never affect the UI.
+    const noPersist = /^(?!\s*(0|false|no|off)\s*$).+/i.test(
+      process.env.COP_STATUSLINE_NO_PERSIST || ''
+    );
+    if (!noPersist) {
       try {
         const snapshot = {
           timestamp: new Date().toISOString(),
