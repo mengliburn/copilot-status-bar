@@ -139,15 +139,18 @@ process.stdin.on('end', () => {
 
     // ── Status persistence for third-party tools ────────────────────────
     // On by default: each turn we atomically write a JSON snapshot of the
-    // latest status to ~/.copilot/cache — normalized fields, the raw Copilot
-    // payload, and a timestamp. To avoid concurrent sessions clobbering each
-    // other, each session writes its own `statusline-<session_id>.json`, plus a
-    // shared `statusline-latest.json` (last-writer-wins convenience pointer).
-    // Set COP_STATUSLINE_NO_PERSIST (to any value other than 0/false/no/off) to
-    // disable. Failures never affect the UI.
+    // latest status to ~/.copilot/cache/statusline-<session_id>.json —
+    // normalized fields, the raw Copilot payload, and a timestamp. Writing one
+    // file per session avoids concurrent sessions clobbering each other; a tool
+    // can read the newest by globbing `statusline-*.json` and picking the most
+    // recent `timestamp`. Set COP_STATUSLINE_NO_PERSIST (to any value other than
+    // 0/false/no/off) to disable. Failures never affect the UI.
     const noPersist = /^(?!\s*(0|false|no|off)\s*$).+/i.test(
       process.env.COP_STATUSLINE_NO_PERSIST || ''
     );
+    // Sanitize the session id so it can't escape the cache dir; fall back to
+    // 'unknown' when the payload carries no session id.
+    const safeId = (session ? String(session).replace(/[^A-Za-z0-9._-]/g, '_') : '') || 'unknown';
     if (!noPersist) {
       try {
         const snapshot = {
@@ -172,15 +175,10 @@ process.stdin.on('end', () => {
           raw: data,
         };
         const json = JSON.stringify(snapshot, null, 2);
-        // Sanitize the session id so it can't escape the cache dir.
-        const safeId = session ? String(session).replace(/[^A-Za-z0-9._-]/g, '_') : '';
-        const targets = [path.join(SAFE_CACHE_DIR, 'statusline-latest.json')];
-        if (safeId) targets.push(path.join(SAFE_CACHE_DIR, `statusline-${safeId}.json`));
-        for (const outFile of targets) {
-          const tmp = outFile + '.tmp-' + process.pid;
-          fs.writeFileSync(tmp, json, { mode: 0o600 });
-          fs.renameSync(tmp, outFile);
-        }
+        const outFile = path.join(SAFE_CACHE_DIR, `statusline-${safeId}.json`);
+        const tmp = outFile + '.tmp-' + process.pid;
+        fs.writeFileSync(tmp, json, { mode: 0o600 });
+        fs.renameSync(tmp, outFile);
       } catch (_) { /* persistence is best-effort — never break the UI */ }
     }
 
