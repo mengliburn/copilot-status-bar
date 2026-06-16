@@ -1,7 +1,7 @@
 #!/usr/bin/env pwsh
-# Install copilot-status-bar as your Copilot CLI status line (Windows / PowerShell).
+# Install copilot-status-bar as your Copilot CLI status bar (Windows / PowerShell).
 #
-# - Copies statusline\copilot-status-bar.js into ~\.copilot\hooks\
+# - Copies statusbar\copilot-status-bar.js into ~\.copilot\hooks\
 # - Patches ~\.copilot\settings.json so statusLine.command runs the script via Node
 #
 # Why "node <absolute-path>"? On Windows the Copilot CLI runs statusLine.command
@@ -14,7 +14,7 @@
 $ErrorActionPreference = 'Stop'
 
 $PluginDir = Split-Path -Parent $PSScriptRoot
-$ScriptSrc = Join-Path $PluginDir 'statusline\copilot-status-bar.js'
+$ScriptSrc = Join-Path $PluginDir 'statusbar\copilot-status-bar.js'
 $CopilotDir = Join-Path $HOME '.copilot'
 $HooksDir = Join-Path $CopilotDir 'hooks'
 $Settings = Join-Path $CopilotDir 'settings.json'
@@ -60,4 +60,4 @@ if (Test-Path -LiteralPath $Settings) {
     Write-Host "created $Settings with statusLine configured"
 }
 
-Write-Host "done. restart 'copilot' to see the new status line."
+Write-Host "done. restart 'copilot' to see the new status bar."

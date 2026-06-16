@@ -1,7 +1,7 @@
 #!/usr/bin/env node
-// copilot-status-bar — rich status line for GitHub Copilot CLI.
+// copilot-status-bar — rich status bar for GitHub Copilot CLI.
 // Reads the Copilot status JSON payload on stdin and writes a single
-// ANSI-formatted status line to stdout. Designed to be wired up via
+// ANSI-formatted status bar to stdout. Designed to be wired up via
 // settings.json -> statusLine.command.
 //
 // Layout: [remote] [task │] directory │ context bar │ premium req │ AIC │ +added/-removed
@@ -143,10 +143,10 @@ process.stdin.on('end', () => {
     // normalized fields, the raw Copilot payload, and a timestamp. Writing one
     // file per session avoids concurrent sessions clobbering each other; a tool
     // can read the newest by globbing `copilot-status-bar-*.json` and picking
-    // the most recent `timestamp`. Set COP_STATUSLINE_NO_PERSIST (to any value
-    // other than 0/false/no/off) to disable. Failures never affect the UI.
+    // the most recent `timestamp`. Set COPILOT_STATUS_BAR_NO_PERSIST (to any
+    // value other than 0/false/no/off) to disable. Failures never affect the UI.
     const noPersist = /^(?!\s*(0|false|no|off)\s*$).+/i.test(
-      process.env.COP_STATUSLINE_NO_PERSIST || ''
+      process.env.COPILOT_STATUS_BAR_NO_PERSIST || ''
     );
     // Sanitize the session id so it can't escape the cache dir; fall back to
     // 'unknown' when the payload carries no session id.

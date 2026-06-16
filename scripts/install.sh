@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-# Install copilot-status-bar as your Copilot CLI status line.
+# Install copilot-status-bar as your Copilot CLI status bar.
 #
-# - Copies statusline/copilot-status-bar.js into ~/.copilot/hooks/
+# - Copies statusbar/copilot-status-bar.js into ~/.copilot/hooks/
 # - Patches ~/.copilot/settings.json to point statusLine at the script
 #
 # Re-runnable: it backs up settings.json to settings.json.bak before editing
@@ -10,7 +10,7 @@
 set -euo pipefail
 
 PLUGIN_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-SCRIPT_SRC="${PLUGIN_DIR}/statusline/copilot-status-bar.js"
+SCRIPT_SRC="${PLUGIN_DIR}/statusbar/copilot-status-bar.js"
 HOOKS_DIR="${HOME}/.copilot/hooks"
 SETTINGS="${HOME}/.copilot/settings.json"
 DEST="${HOOKS_DIR}/copilot-status-bar.js"
@@ -63,4 +63,4 @@ else
 EOF
 fi
 
-echo "done. restart 'copilot' to see the new status line."
+echo "done. restart 'copilot' to see the new status bar."

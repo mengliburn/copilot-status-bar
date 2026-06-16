@@ -1,6 +1,6 @@
 # copilot-status-bar
 
-A rich status line for [GitHub Copilot CLI](https://docs.github.com/copilot/how-tos/use-copilot-agents/use-copilot-cli) that shows, in a single line:
+A rich status bar for [GitHub Copilot CLI](https://docs.github.com/copilot/how-tos/use-copilot-agents/use-copilot-cli) that shows, in a single line:
 
 - **Context-window usage** — colored progress bar scaled to 80% of the model limit (green → yellow → orange → red 💀)
 - **Current in-progress task** — pulled from the session's `todos` table (if `sqlite3` is on `PATH`)
@@ -28,7 +28,7 @@ copilot
 > /plugin install copilot-status-bar
 ```
 
-Then run the bundled installer to wire the status line into `~/.copilot/settings.json`:
+Then run the bundled installer to wire the status bar into `~/.copilot/settings.json`:
 
 **macOS / Linux:**
 
@@ -62,7 +62,7 @@ pwsh -NoProfile -File scripts\install.ps1
 
 The installer:
 
-1. Copies `statusline/copilot-status-bar.js` to `~/.copilot/hooks/copilot-status-bar.js`
+1. Copies `statusbar/copilot-status-bar.js` to `~/.copilot/hooks/copilot-status-bar.js`
 2. Adds (or updates) the `statusLine` block in `~/.copilot/settings.json`:
 
    ```json
@@ -92,16 +92,16 @@ The installer:
 
 3. Backs up the prior settings file to `settings.json.bak`.
 
-Restart `copilot` to see the new status line.
+Restart `copilot` to see the new status bar.
 
 ## Requirements
 
 - **Node.js** ≥ 18 (the script is a single-file Node program with no dependencies)
-- **`sqlite3` CLI** (optional) — used to surface the active in-progress todo from the session database. The status line works fine without it; the task segment is simply omitted.
+- **`sqlite3` CLI** (optional) — used to surface the active in-progress todo from the session database. The status bar works fine without it; the task segment is simply omitted.
 
 ## How it works
 
-Copilot CLI invokes the configured `statusLine.command` after every turn and pipes a JSON status payload to its stdin. `copilot-status-bar.js` parses that payload and writes a single ANSI-formatted line to stdout. All errors are swallowed silently — the status line should never break the UI.
+Copilot CLI invokes the configured `statusLine.command` after every turn and pipes a JSON status payload to its stdin. `copilot-status-bar.js` parses that payload and writes a single ANSI-formatted line to stdout. All errors are swallowed silently — the status bar should never break the UI.
 
 Key fields consumed:
 
@@ -128,7 +128,7 @@ accrues.
 
 ## Persisting status for other tools
 
-By default, on every turn the status line atomically writes a JSON snapshot of
+By default, on every turn the status bar atomically writes a JSON snapshot of
 the latest status to `~/.copilot/cache/copilot-status-bar-<session_id>.json`.
 Writing one file per session means concurrent Copilot CLI sessions never clobber
 each other's data. This lets a third-party tool (e.g. a tmux/`polybar` widget, a
@@ -137,8 +137,8 @@ specific session's file, or glob `copilot-status-bar-*.json` and pick the most
 recent `timestamp` for "whatever's newest". (Sessions with no id fall back to
 `copilot-status-bar-unknown.json`.)
 
-To disable persistence, set `COP_STATUSLINE_NO_PERSIST` to any value other than
-`0`/`false`/`no`/`off` (e.g. `export COP_STATUSLINE_NO_PERSIST=1`). When
+To disable persistence, set `COPILOT_STATUS_BAR_NO_PERSIST` to any value other than
+`0`/`false`/`no`/`off` (e.g. `export COPILOT_STATUS_BAR_NO_PERSIST=1`). When
 disabled, nothing is written and behavior is otherwise unchanged.
 
 The snapshot contains normalized `fields`, the verbatim `raw` Copilot payload,
@@ -174,7 +174,7 @@ Notes:
 - Files live in the secure `~/.copilot/cache` directory (created `0700`) and are
   written atomically (temp file + rename) with `0600` permissions. The
   `session_id` is sanitized before use in the filename. Writes are best-effort —
-  a persistence failure never breaks the status line.
+  a persistence failure never breaks the status bar.
 
 ## Uninstall
 
