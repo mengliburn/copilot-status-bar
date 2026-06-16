@@ -129,11 +129,16 @@ accrues.
 ## Persisting status for other tools
 
 By default, on every turn the status line atomically writes a JSON snapshot of
-the latest status to `~/.copilot/cache/statusline-latest.json`. This lets a
-third-party tool (e.g. a tmux/`polybar` widget, a menu-bar app, or a logger)
-consume the same data the bar renders.
+the latest status into `~/.copilot/cache`. This lets a third-party tool (e.g. a
+tmux/`polybar` widget, a menu-bar app, or a logger) consume the same data the
+bar renders. Two files are written each turn:
 
-To disable it, set `COP_STATUSLINE_NO_PERSIST` to any value other than
+- `statusline-<session_id>.json` — per-session, so concurrent Copilot CLI
+  sessions never clobber each other's data. Read this to track one session.
+- `statusline-latest.json` — a shared, last-writer-wins pointer to whichever
+  session rendered most recently. Convenient when you only run one session.
+
+To disable persistence, set `COP_STATUSLINE_NO_PERSIST` to any value other than
 `0`/`false`/`no`/`off` (e.g. `export COP_STATUSLINE_NO_PERSIST=1`). When
 disabled, nothing is written and behavior is otherwise unchanged.
 
@@ -167,9 +172,10 @@ Notes:
   is the value drawn on the bar (scaled to 80% of the model limit).
 - `aic_credits` is the numeric AI Credit value; `aic_text` is the displayed
   string (which may be a CLI-preformatted figure).
-- The file lives in the secure `~/.copilot/cache` directory (created `0700`),
-  is written atomically (temp file + rename) with `0600` permissions. Writes are
-  best-effort — a persistence failure never breaks the status line.
+- Files live in the secure `~/.copilot/cache` directory (created `0700`) and are
+  written atomically (temp file + rename) with `0600` permissions. The
+  `session_id` is sanitized before use in the filename. Writes are best-effort —
+  a persistence failure never breaks the status line.
 
 ## Uninstall
 
