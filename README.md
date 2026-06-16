@@ -24,7 +24,7 @@ deploy-api │ copilot-status-bar █████░░░░░ 58% │ 12 req 
 
 ```bash
 copilot
-> /plugin marketplace add softienerd/copilot-status-bar
+> /plugin marketplace add mengliburn/copilot-status-bar
 > /plugin install copilot-status-bar
 ```
 
@@ -33,13 +33,13 @@ Then run the bundled installer to wire the status line into `~/.copilot/settings
 **macOS / Linux:**
 
 ```bash
-bash ~/.copilot/installed-plugins/_direct/softienerd--copilot-status-bar/scripts/install.sh
+bash ~/.copilot/installed-plugins/_direct/mengliburn--copilot-status-bar/scripts/install.sh
 ```
 
 **Windows (PowerShell):**
 
 ```powershell
-pwsh -NoProfile -File "$HOME\.copilot\installed-plugins\_direct\softienerd--copilot-status-bar\scripts\install.ps1"
+pwsh -NoProfile -File "$HOME\.copilot\installed-plugins\_direct\mengliburn--copilot-status-bar\scripts\install.ps1"
 ```
 
 ### Manual install
@@ -47,7 +47,7 @@ pwsh -NoProfile -File "$HOME\.copilot\installed-plugins\_direct\softienerd--copi
 **macOS / Linux:**
 
 ```bash
-git clone https://github.com/softienerd/copilot-status-bar.git
+git clone https://github.com/mengliburn/copilot-status-bar.git
 cd copilot-status-bar
 bash scripts/install.sh
 ```
@@ -55,7 +55,7 @@ bash scripts/install.sh
 **Windows (PowerShell):**
 
 ```powershell
-git clone https://github.com/softienerd/copilot-status-bar.git
+git clone https://github.com/mengliburn/copilot-status-bar.git
 cd copilot-status-bar
 pwsh -NoProfile -File scripts\install.ps1
 ```
