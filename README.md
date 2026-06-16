@@ -12,6 +12,8 @@ A rich status line for [GitHub Copilot CLI](https://docs.github.com/copilot/how-
 
 Example output:
 
+![copilot-status-bar example](./statusbar.png)
+
 ```
 deploy-api │ copilot-status-bar  ██████░░░░ 58%  │ 12 req │ 12.8 AIC │ +124 -37
 ```
@@ -28,16 +30,34 @@ copilot
 
 Then run the bundled installer to wire the status line into `~/.copilot/settings.json`:
 
+**macOS / Linux:**
+
 ```bash
 bash ~/.copilot/installed-plugins/_direct/softienerd--copilot-status-bar/scripts/install.sh
 ```
 
+**Windows (PowerShell):**
+
+```powershell
+pwsh -NoProfile -File "$HOME\.copilot\installed-plugins\_direct\softienerd--copilot-status-bar\scripts\install.ps1"
+```
+
 ### Manual install
+
+**macOS / Linux:**
 
 ```bash
 git clone https://github.com/softienerd/copilot-status-bar.git
 cd copilot-status-bar
 bash scripts/install.sh
+```
+
+**Windows (PowerShell):**
+
+```powershell
+git clone https://github.com/softienerd/copilot-status-bar.git
+cd copilot-status-bar
+pwsh -NoProfile -File scripts\install.ps1
 ```
 
 The installer:
@@ -50,6 +70,21 @@ The installer:
      "statusLine": {
        "type": "command",
        "command": "~/.copilot/hooks/cop-statusline.js",
+       "padding": 0
+     }
+   }
+   ```
+
+   On **Windows**, the installer instead writes an explicit Node invocation with
+   an absolute path, because Copilot CLI runs `statusLine.command` through
+   `cmd.exe` — a bare `.js` path is launched by Windows Script Host (not Node, so
+   it produces no output), and `~` is not expanded by `cmd.exe`:
+
+   ```json
+   {
+     "statusLine": {
+       "type": "command",
+       "command": "node \"C:/Users/<you>/.copilot/hooks/cop-statusline.js\"",
        "padding": 0
      }
    }
