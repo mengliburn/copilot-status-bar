@@ -139,12 +139,12 @@ process.stdin.on('end', () => {
 
     // ── Status persistence for third-party tools ────────────────────────
     // On by default: each turn we atomically write a JSON snapshot of the
-    // latest status to ~/.copilot/cache/statusline-<session_id>.json —
+    // latest status to ~/.copilot/cache/copilot-status-bar-<session_id>.json —
     // normalized fields, the raw Copilot payload, and a timestamp. Writing one
     // file per session avoids concurrent sessions clobbering each other; a tool
-    // can read the newest by globbing `statusline-*.json` and picking the most
-    // recent `timestamp`. Set COP_STATUSLINE_NO_PERSIST (to any value other than
-    // 0/false/no/off) to disable. Failures never affect the UI.
+    // can read the newest by globbing `copilot-status-bar-*.json` and picking
+    // the most recent `timestamp`. Set COP_STATUSLINE_NO_PERSIST (to any value
+    // other than 0/false/no/off) to disable. Failures never affect the UI.
     const noPersist = /^(?!\s*(0|false|no|off)\s*$).+/i.test(
       process.env.COP_STATUSLINE_NO_PERSIST || ''
     );
@@ -175,7 +175,7 @@ process.stdin.on('end', () => {
           raw: data,
         };
         const json = JSON.stringify(snapshot, null, 2);
-        const outFile = path.join(SAFE_CACHE_DIR, `statusline-${safeId}.json`);
+        const outFile = path.join(SAFE_CACHE_DIR, `copilot-status-bar-${safeId}.json`);
         const tmp = outFile + '.tmp-' + process.pid;
         fs.writeFileSync(tmp, json, { mode: 0o600 });
         fs.renameSync(tmp, outFile);

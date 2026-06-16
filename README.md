@@ -129,13 +129,13 @@ accrues.
 ## Persisting status for other tools
 
 By default, on every turn the status line atomically writes a JSON snapshot of
-the latest status to `~/.copilot/cache/statusline-<session_id>.json`. Writing one
-file per session means concurrent Copilot CLI sessions never clobber each
-other's data. This lets a third-party tool (e.g. a tmux/`polybar` widget, a
+the latest status to `~/.copilot/cache/copilot-status-bar-<session_id>.json`.
+Writing one file per session means concurrent Copilot CLI sessions never clobber
+each other's data. This lets a third-party tool (e.g. a tmux/`polybar` widget, a
 menu-bar app, or a logger) consume the same data the bar renders — read a
-specific session's file, or glob `statusline-*.json` and pick the most recent
-`timestamp` for "whatever's newest". (Sessions with no id fall back to
-`statusline-unknown.json`.)
+specific session's file, or glob `copilot-status-bar-*.json` and pick the most
+recent `timestamp` for "whatever's newest". (Sessions with no id fall back to
+`copilot-status-bar-unknown.json`.)
 
 To disable persistence, set `COP_STATUSLINE_NO_PERSIST` to any value other than
 `0`/`false`/`no`/`off` (e.g. `export COP_STATUSLINE_NO_PERSIST=1`). When
