@@ -126,6 +126,52 @@ metered figure, not an estimate. The script prefers the CLI-provided
 always shown — including at session start, where it reads `0 AIC` until usage
 accrues.
 
+## Persisting status for other tools
+
+Set the `COP_STATUSLINE_OUT` environment variable (to any value) and the status
+line will, on every turn, atomically write a JSON snapshot of the latest status
+to `~/.copilot/cache/statusline-latest.json`. This lets a third-party tool (e.g.
+a tmux/`polybar` widget, a menu-bar app, or a logger) consume the same data the
+bar renders. When the variable is unset, nothing is written and behavior is
+unchanged.
+
+The snapshot contains normalized `fields`, the verbatim `raw` Copilot payload,
+and an ISO-8601 `timestamp`:
+
+```json
+{
+  "timestamp": "2026-06-16T18:06:39.507Z",
+  "session_id": "abc123",
+  "fields": {
+    "dir": "/home/you/code/copilot-status-bar",
+    "dir_name": "copilot-status-bar",
+    "task": null,
+    "context_used_percentage": 46,
+    "context_bar_percentage": 57,
+    "aic_text": "120",
+    "aic_credits": 120,
+    "premium_requests": 12,
+    "lines_added": 124,
+    "lines_removed": 37,
+    "remote": { "connected": true, "indicator": "☁" }
+  },
+  "raw": { "...": "the full Copilot status payload" }
+}
+```
+
+Notes:
+
+- `context_used_percentage` is the real usage (0–100); `context_bar_percentage`
+  is the value drawn on the bar (scaled to 80% of the model limit).
+- `aic_credits` is the numeric AI Credit value; `aic_text` is the displayed
+  string (which may be a CLI-preformatted figure).
+- The file lives in the secure `~/.copilot/cache` directory (created `0700`),
+  is written atomically (temp file + rename) with `0600` permissions. Writes are
+  best-effort — a persistence failure never breaks the status line.
+
+To enable it for every session, export the variable from your shell profile,
+e.g. `export COP_STATUSLINE_OUT=1`.
+
 ## Uninstall
 
 1. Remove the `statusLine` block from `~/.copilot/settings.json`

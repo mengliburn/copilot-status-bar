@@ -48,9 +48,13 @@ process.stdin.on('end', () => {
     }
 
     let ctx = '';
+    let contextUsedPct = null;   // real usage %, clamped 0–100
+    let contextBarPct = null;    // value shown on the bar (scaled to 80%)
     if (usedPct != null) {
       const rawUsed = Math.max(0, Math.min(100, Math.round(usedPct)));
       const used = Math.min(100, Math.round((rawUsed / 80) * 100));
+      contextUsedPct = rawUsed;
+      contextBarPct = used;
       const filled = Math.floor(used / 10);
       const bar = '\u2588'.repeat(filled) + '\u2591'.repeat(10 - filled);
       if (used < 63) {
@@ -111,6 +115,16 @@ process.stdin.on('end', () => {
     if (aicText === null) aicText = '0';
     usage += ` \u2502 \x1b[36m${aicText} AIC\x1b[0m`;
 
+    // Numeric AIC for machine consumers: prefer the raw nano value, else parse
+    // whatever text we are displaying.
+    let aicCredits = null;
+    if (typeof aiUsed.total_nano_aiu === 'number' && Number.isFinite(aiUsed.total_nano_aiu)) {
+      aicCredits = Math.max(0, aiUsed.total_nano_aiu) / NANO_PER_AIC;
+    } else {
+      const parsed = parseFloat(aicText);
+      if (Number.isFinite(parsed)) aicCredits = parsed;
+    }
+
     const added = data.cost?.total_lines_added || 0;
     const removed = data.cost?.total_lines_removed || 0;
     if (added || removed) {
@@ -121,6 +135,41 @@ process.stdin.on('end', () => {
     let remote = '';
     if (data.remote?.connected) {
       remote = ` \x1b[36m${data.remote.indicator || '\u2601'}\x1b[0m`;
+    }
+
+    // ── Optional persistence for third-party tools ──────────────────────
+    // When COP_STATUSLINE_OUT is set (to any value), atomically write a JSON
+    // snapshot of the latest status each turn to ~/.copilot/cache: normalized
+    // fields, the raw Copilot payload, and a timestamp. Failures never affect
+    // the UI.
+    if (process.env.COP_STATUSLINE_OUT) {
+      try {
+        const snapshot = {
+          timestamp: new Date().toISOString(),
+          session_id: session || null,
+          fields: {
+            dir,
+            dir_name: path.basename(dir),
+            task: task || null,
+            context_used_percentage: contextUsedPct,
+            context_bar_percentage: contextBarPct,
+            aic_text: aicText,
+            aic_credits: aicCredits,
+            premium_requests: typeof premium === 'number' ? premium : null,
+            lines_added: added,
+            lines_removed: removed,
+            remote: {
+              connected: !!data.remote?.connected,
+              indicator: data.remote?.indicator || null,
+            },
+          },
+          raw: data,
+        };
+        const outFile = path.join(SAFE_CACHE_DIR, 'statusline-latest.json');
+        const tmp = outFile + '.tmp-' + process.pid;
+        fs.writeFileSync(tmp, JSON.stringify(snapshot, null, 2), { mode: 0o600 });
+        fs.renameSync(tmp, outFile);
+      } catch (_) { /* persistence is best-effort — never break the UI */ }
     }
 
     // ── Output ──────────────────────────────────────────────────────────
