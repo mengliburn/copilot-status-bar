@@ -86,22 +86,36 @@ function countActiveSubagents(transcriptPath) {
   }
 }
 
-// Count todos that are still open for the session: pending or in progress.
-// This is best-effort (sqlite3 may be missing, the db may be locked, etc.) and
-// returns 0 on any error so the status bar never breaks the UI.
-function countActiveTasks(dbPath) {
+// Read todo info for the session from the Copilot session.db in a SINGLE
+// sqlite3 invocation: the count of still-open todos (pending/in_progress) and
+// the title of the current in-progress todo. Both are needed on every
+// status-line render, so we run the two SELECTs in one call to avoid spawning
+// the sqlite3 CLI (and re-opening the same db) twice on the hot render path.
+// Best-effort — sqlite3 may be missing or the db locked — so any error yields
+// { count: 0, title: '' } and the status bar never breaks the UI.
+function readSessionTodos(dbPath) {
+  const empty = { count: 0, title: '' };
   try {
-    if (!dbPath || !fs.existsSync(dbPath)) return 0;
+    if (!dbPath || !fs.existsSync(dbPath)) return empty;
     // No sqlite3 module in stdlib — shell out via sqlite3 CLI if available.
     const { execFileSync } = require('child_process');
+    // Two statements in one call; sqlite3 emits their results in order, one row
+    // per line: first the COUNT, then (optionally) the in-progress title.
     const out = execFileSync('sqlite3', [
       dbPath,
-      "SELECT COUNT(*) FROM todos WHERE status IN ('pending','in_progress');"
-    ], { encoding: 'utf8', timeout: 500, stdio: ['ignore', 'pipe', 'ignore'] }).trim();
-    const count = Number.parseInt(out, 10);
-    return Number.isFinite(count) && count > 0 ? count : 0;
+      "SELECT COUNT(*) FROM todos WHERE status IN ('pending','in_progress'); " +
+      "SELECT title FROM todos WHERE status='in_progress' ORDER BY updated_at DESC LIMIT 1;"
+    ], { encoding: 'utf8', timeout: 500, stdio: ['ignore', 'pipe', 'ignore'] });
+    const nl = out.indexOf('\n');
+    const countStr = (nl === -1 ? out : out.slice(0, nl)).trim();
+    const title = (nl === -1 ? '' : out.slice(nl + 1)).trim();
+    const count = Number.parseInt(countStr, 10);
+    return {
+      count: Number.isFinite(count) && count > 0 ? count : 0,
+      title,
+    };
   } catch (_) {
-    return 0;
+    return empty;
   }
 }
 
@@ -151,25 +165,15 @@ process.stdin.on('end', () => {
       }
     }
 
-    // ── Current task from Copilot session.db todos ──────────────────────
-    let task = '';
+    // ── Task info from Copilot session.db todos (single sqlite3 read) ───
+    // One sqlite3 call yields both the open-todo count and the in-progress
+    // title (see readSessionTodos), keeping this off the render hot path.
     const dbPath = session
       ? path.join(homeDir, '.copilot', 'session-state', session, 'session.db')
       : '';
-    const activeTasks = session ? countActiveTasks(dbPath) : 0;
-    if (session) {
-      if (fs.existsSync(dbPath)) {
-        try {
-          // No sqlite3 module in stdlib — shell out via sqlite3 CLI if available.
-          const { execFileSync } = require('child_process');
-          const out = execFileSync('sqlite3', [
-            dbPath,
-            "SELECT title FROM todos WHERE status='in_progress' ORDER BY updated_at DESC LIMIT 1;"
-          ], { encoding: 'utf8', timeout: 500, stdio: ['ignore', 'pipe', 'ignore'] }).trim();
-          if (out) task = out;
-        } catch (_) { /* sqlite3 missing or db locked — skip */ }
-      }
-    }
+    const todos = session ? readSessionTodos(dbPath) : { count: 0, title: '' };
+    const activeTasks = todos.count;
+    const task = todos.title;
 
     // ── Cost / activity (Copilot's premium request + line counts) ───────
     let usage = '';

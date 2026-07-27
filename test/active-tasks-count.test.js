@@ -77,11 +77,17 @@ try {
 
     const oneHome = path.join(SCRATCH, 'one-home');
     createDb(oneHome, 'one-active', ['in_progress', 'done']);
-    check('one active todo -> singular task label', /📋 1 task\b/.test(render(oneHome, 'one-active')));
+    const oneOut = render(oneHome, 'one-active');
+    check('one active todo -> singular task label', /📋 1 task\b/.test(oneOut));
+    // The combined single-sqlite3 read must still surface the in-progress title.
+    check('one active todo -> in-progress title rendered', oneOut.includes('todo 1'));
 
     const manyHome = path.join(SCRATCH, 'many-home');
     createDb(manyHome, 'many-active', ['pending', 'in_progress', 'done', 'blocked']);
-    check('pending plus in-progress todos -> plural tasks label', /📋 2 tasks\b/.test(render(manyHome, 'many-active')));
+    const manyOut = render(manyHome, 'many-active');
+    check('pending plus in-progress todos -> plural tasks label', /📋 2 tasks\b/.test(manyOut));
+    // Title comes from the in-progress row (todo 2), not the pending one.
+    check('title reflects in-progress row alongside plural count', manyOut.includes('todo 2'));
   } else {
     console.log('  skip - sqlite3 unavailable; nonzero active task checks skipped');
   }
