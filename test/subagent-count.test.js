@@ -15,10 +15,14 @@
 
 const { execFileSync } = require('child_process');
 const fs = require('fs');
-const os = require('os');
 const path = require('path');
 
 const SCRIPT = path.join(__dirname, '..', 'statusbar', 'copilot-status-bar.js');
+const SCRATCH = path.join(__dirname, 'scratch-subagent-count-' + process.pid);
+let renderCount = 0;
+process.on('exit', () => {
+  fs.rmSync(SCRATCH, { recursive: true, force: true });
+});
 
 let failures = 0;
 function check(name, cond) {
@@ -36,13 +40,14 @@ function ev(type, data) {
 
 // Render the status bar for a given set of transcript lines, returning stdout.
 function render(lines) {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'csb-test-'));
+  const dir = path.join(SCRATCH, 'case-' + (++renderCount));
+  fs.mkdirSync(dir, { recursive: true });
   const transcript = path.join(dir, 'events.jsonl');
   fs.writeFileSync(transcript, lines.join('\n') + '\n');
   const payload = JSON.stringify({
     session_id: 'test',
     transcript_path: dir,
-    workspace: { current_dir: '/tmp/demo' },
+    workspace: { current_dir: path.join(__dirname, '..') },
     context_window: { current_context_used_percentage: 20 },
   });
   return execFileSync('node', [SCRIPT], {

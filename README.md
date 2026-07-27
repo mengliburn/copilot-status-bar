@@ -4,6 +4,7 @@ A rich status bar for [GitHub Copilot CLI](https://docs.github.com/copilot/how-t
 
 - **Context-window usage** — colored progress bar scaled to 80% of the model limit (green → yellow → orange → red 💀)
 - **Current in-progress task** — pulled from the session's `todos` table (if `sqlite3` is on `PATH`)
+- **Active tasks** — count of open session todos (`pending` + `in_progress`), always shown as `📋 0 tasks` when none are active
 - **Active subagents** — count of subagents currently running for the session (background or synchronous), derived from `subagent.started` / `subagent.completed` events in the session `events.jsonl` transcript; always shown, reading `🤖 0 active` when none are running
 - **Working directory** — basename of the current dir
 - **Premium request count** — from `cost.total_premium_requests`
@@ -98,7 +99,7 @@ Restart `copilot` to see the new status bar.
 ## Requirements
 
 - **Node.js** ≥ 18 (the script is a single-file Node program with no dependencies)
-- **`sqlite3` CLI** (optional) — used to surface the active in-progress todo from the session database. The status bar works fine without it; the task segment is simply omitted.
+- **`sqlite3` CLI** (optional) — used to surface the active in-progress todo and active task count from the session database. The status bar works fine without it; the title segment is simply omitted and the task count falls back to `0 tasks`.
 
 ## How it works
 
@@ -109,7 +110,7 @@ Key fields consumed:
 | Field | Use |
 |---|---|
 | `workspace.current_dir`, `cwd` | Directory segment |
-| `session_id` | Locate `~/.copilot/session-state/<id>/session.db` to read active todo |
+| `session_id` | Locate `~/.copilot/session-state/<id>/session.db` to read the active todo title and count active tasks (`pending` + `in_progress`) |
 | `transcript_path`, `session_id` | Locate `events.jsonl`; count `subagent.started` minus `subagent.completed` (by `toolCallId`) for active subagents |
 | `context_window.current_context_used_percentage` | Context bar |
 | `context_window.remaining_percentage` | Context bar fallback |
@@ -154,6 +155,7 @@ and an ISO-8601 `timestamp`:
     "dir": "/home/you/code/copilot-status-bar",
     "dir_name": "copilot-status-bar",
     "task": null,
+    "active_tasks": 0,
     "active_subagents": 0,
     "context_used_percentage": 46,
     "context_bar_percentage": 57,
