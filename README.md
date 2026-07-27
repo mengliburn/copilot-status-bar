@@ -4,7 +4,7 @@ A rich status bar for [GitHub Copilot CLI](https://docs.github.com/copilot/how-t
 
 - **Context-window usage** — colored progress bar scaled to 80% of the model limit (green → yellow → orange → red 💀)
 - **Current in-progress task** — pulled from the session's `todos` table (if `sqlite3` is on `PATH`)
-- **Active subagents** — count of subagents currently running for the session (background or in-flight `task` invocations), read from the session `events.jsonl` transcript; shown only when at least one is active
+- **Active subagents** — count of subagents currently running for the session (background or synchronous), derived from `subagent.started` / `subagent.completed` events in the session `events.jsonl` transcript; shown only when at least one is active
 - **Working directory** — basename of the current dir
 - **Premium request count** — from `cost.total_premium_requests`
 - **AI Credits (AIC)** — actual GitHub AI Credit usage for the session, read directly from the Copilot payload (`ai_used.formatted` / `ai_used.total_nano_aiu`); this is metered cost, not a token-based estimate
@@ -110,7 +110,7 @@ Key fields consumed:
 |---|---|
 | `workspace.current_dir`, `cwd` | Directory segment |
 | `session_id` | Locate `~/.copilot/session-state/<id>/session.db` to read active todo |
-| `transcript_path`, `session_id` | Locate `events.jsonl` to count active subagents |
+| `transcript_path`, `session_id` | Locate `events.jsonl`; count `subagent.started` minus `subagent.completed` (by `toolCallId`) for active subagents |
 | `context_window.current_context_used_percentage` | Context bar |
 | `context_window.remaining_percentage` | Context bar fallback |
 | `ai_used.formatted`, `ai_used.total_nano_aiu` | AI Credits (AIC) used |
@@ -154,6 +154,7 @@ and an ISO-8601 `timestamp`:
     "dir": "/home/you/code/copilot-status-bar",
     "dir_name": "copilot-status-bar",
     "task": null,
+    "active_subagents": 0,
     "context_used_percentage": 46,
     "context_bar_percentage": 57,
     "aic_text": "120",
