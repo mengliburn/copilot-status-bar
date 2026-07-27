@@ -22,6 +22,40 @@ function ensureDirSecure(dir) {
   }
 }
 
+// Count subagents that are currently active for the session — i.e. `task`
+// tool invocations that have started but not yet completed. Copilot CLI
+// records tool lifecycle events in the session's `events.jsonl` transcript;
+// a subagent launch is a `tool.execution_start` with `toolName === 'task'`,
+// and it is matched to its `tool.execution_complete` by `toolCallId`. Any
+// start without a matching complete is still running (e.g. a background
+// subagent). Returns 0 on any error — this segment must never break the UI.
+function countActiveSubagents(transcriptPath) {
+  try {
+    if (!transcriptPath || !fs.existsSync(transcriptPath)) return 0;
+    const raw = fs.readFileSync(transcriptPath, 'utf8');
+    const started = new Set();
+    const completed = new Set();
+    for (const line of raw.split('\n')) {
+      // Cheap prefilter: only parse tool lifecycle lines.
+      if (line.indexOf('tool.execution_') === -1) continue;
+      let e;
+      try { e = JSON.parse(line); } catch (_) { continue; }
+      const d = e && e.data;
+      if (!d || !d.toolCallId) continue;
+      if (e.type === 'tool.execution_start' && d.toolName === 'task') {
+        started.add(d.toolCallId);
+      } else if (e.type === 'tool.execution_complete') {
+        completed.add(d.toolCallId);
+      }
+    }
+    let active = 0;
+    for (const id of started) if (!completed.has(id)) active++;
+    return active;
+  } catch (_) {
+    return 0;
+  }
+}
+
 try {
   ensureDirSecure(SAFE_CACHE_DIR);
 } catch (err) {
@@ -87,6 +121,19 @@ process.stdin.on('end', () => {
 
     // ── Cost / activity (Copilot's premium request + line counts) ───────
     let usage = '';
+
+    // ── Active subagents ────────────────────────────────────────────────
+    // Number of subagents currently running for this session (background or
+    // in-flight `task` invocations). Derived from the session transcript.
+    const transcriptDir = data.transcript_path
+      || (session ? path.join(homeDir, '.copilot', 'session-state', session) : '');
+    const eventsPath = transcriptDir ? path.join(transcriptDir, 'events.jsonl') : '';
+    const activeSubagents = countActiveSubagents(eventsPath);
+    if (activeSubagents > 0) {
+      const label = activeSubagents === 1 ? 'agent' : 'agents';
+      usage += ` \u2502 \x1b[35m\uD83E\uDD16 ${activeSubagents} ${label}\x1b[0m`;
+    }
+
     const premium = data.cost?.total_premium_requests;
     if (typeof premium === 'number' && premium > 0) {
       usage += ` \u2502 \x1b[1;37m${premium} req\x1b[0m`;
@@ -160,6 +207,7 @@ process.stdin.on('end', () => {
             dir,
             dir_name: path.basename(dir),
             task: task || null,
+            active_subagents: activeSubagents,
             context_used_percentage: contextUsedPct,
             context_bar_percentage: contextBarPct,
             aic_text: aicText,
