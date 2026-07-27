@@ -4,7 +4,7 @@
 // ANSI-formatted status bar to stdout. Designed to be wired up via
 // settings.json -> statusLine.command.
 //
-// Layout: [remote] [task │] directory │ context bar │ premium req │ AIC │ +added/-removed
+// Layout: [remote] [task │] directory │ context bar │ active tasks │ active subagents │ premium req │ AIC │ +added/-removed
 
 const fs = require('fs');
 const path = require('path');
@@ -86,6 +86,25 @@ function countActiveSubagents(transcriptPath) {
   }
 }
 
+// Count todos that are still open for the session: pending or in progress.
+// This is best-effort (sqlite3 may be missing, the db may be locked, etc.) and
+// returns 0 on any error so the status bar never breaks the UI.
+function countActiveTasks(dbPath) {
+  try {
+    if (!dbPath || !fs.existsSync(dbPath)) return 0;
+    // No sqlite3 module in stdlib — shell out via sqlite3 CLI if available.
+    const { execFileSync } = require('child_process');
+    const out = execFileSync('sqlite3', [
+      dbPath,
+      "SELECT COUNT(*) FROM todos WHERE status IN ('pending','in_progress');"
+    ], { encoding: 'utf8', timeout: 500, stdio: ['ignore', 'pipe', 'ignore'] }).trim();
+    const count = Number.parseInt(out, 10);
+    return Number.isFinite(count) && count > 0 ? count : 0;
+  } catch (_) {
+    return 0;
+  }
+}
+
 try {
   ensureDirSecure(SAFE_CACHE_DIR);
 } catch (err) {
@@ -134,8 +153,11 @@ process.stdin.on('end', () => {
 
     // ── Current task from Copilot session.db todos ──────────────────────
     let task = '';
+    const dbPath = session
+      ? path.join(homeDir, '.copilot', 'session-state', session, 'session.db')
+      : '';
+    const activeTasks = session ? countActiveTasks(dbPath) : 0;
     if (session) {
-      const dbPath = path.join(homeDir, '.copilot', 'session-state', session, 'session.db');
       if (fs.existsSync(dbPath)) {
         try {
           // No sqlite3 module in stdlib — shell out via sqlite3 CLI if available.
@@ -151,6 +173,12 @@ process.stdin.on('end', () => {
 
     // ── Cost / activity (Copilot's premium request + line counts) ───────
     let usage = '';
+
+    // ── Active tasks ───────────────────────────────────────────────────
+    // Always shown, including with no open todos (`0 tasks`), so the segment
+    // remains stable as session task state changes.
+    const taskLabel = `${activeTasks} ${activeTasks === 1 ? 'task' : 'tasks'}`;
+    usage += ` \u2502 \x1b[34m\uD83D\uDCCB ${taskLabel}\x1b[0m`;
 
     // ── Active subagents ────────────────────────────────────────────────
     // Number of subagents currently running for this session (background or
@@ -240,6 +268,7 @@ process.stdin.on('end', () => {
             dir,
             dir_name: path.basename(dir),
             task: task || null,
+            active_tasks: activeTasks,
             active_subagents: activeSubagents,
             context_used_percentage: contextUsedPct,
             context_bar_percentage: contextBarPct,
