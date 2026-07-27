@@ -78,14 +78,14 @@ check('two running subagents -> plural label', /🤖 2 agents\b/.test(render([
   ev('subagent.started', { toolCallId: 's2' }),
 ])));
 
-// 4. All completed -> segment shows `0 active` (never hidden).
-check('all subagents completed -> 0 active shown', /🤖 0 active\b/.test(render([
+// 4. All completed -> segment shows `0 agents` (never hidden).
+check('all subagents completed -> 0 agents shown', /🤖 0 agents\b/.test(render([
   ev('subagent.started', { toolCallId: 's1' }),
   ev('subagent.completed', { toolCallId: 's1' }),
 ])));
 
-// 5. No subagents at all -> segment shows `0 active` (never hidden).
-check('no subagents -> 0 active shown', /🤖 0 active\b/.test(render([
+// 5. No subagents at all -> segment shows `0 agents` (never hidden).
+check('no subagents -> 0 agents shown', /🤖 0 agents\b/.test(render([
   ev('tool.execution_start', { toolCallId: 'b1', toolName: 'bash' }),
 ])));
 
