@@ -22,29 +22,59 @@ function ensureDirSecure(dir) {
   }
 }
 
-// Count subagents that are currently active for the session — i.e. `task`
-// tool invocations that have started but not yet completed. Copilot CLI
-// records tool lifecycle events in the session's `events.jsonl` transcript;
-// a subagent launch is a `tool.execution_start` with `toolName === 'task'`,
-// and it is matched to its `tool.execution_complete` by `toolCallId`. Any
-// start without a matching complete is still running (e.g. a background
-// subagent). Returns 0 on any error — this segment must never break the UI.
+// Count subagents that are currently running for the session. Copilot CLI
+// records subagent lifecycle events in the session's `events.jsonl`
+// transcript: a `subagent.started` event when a subagent begins, and a
+// `subagent.completed` event when it finishes, matched by `toolCallId`. Any
+// `started` without a matching `completed` is still running.
+//
+// NB: we intentionally track the `subagent.*` lifecycle rather than the
+// `task` tool's own `tool.execution_start`/`tool.execution_complete`. For a
+// *background* subagent the `task` tool call completes immediately (it just
+// returns an agent id) while the subagent keeps running for much longer, so
+// keying off the tool call would drop background agents from the count.
+//
+// The transcript is append-only and can grow to many MB in long sessions,
+// and this runs on every status-line render, so we avoid loading the whole
+// file: past a size threshold we read only the trailing slice. That can miss
+// a subagent whose `started` event scrolled out of the window (rare — it
+// would have to have been running across a very large amount of transcript),
+// which we accept to keep the UI responsive. Returns 0 on any error — this
+// segment must never break the UI.
 function countActiveSubagents(transcriptPath) {
+  const TAIL_BYTES = 4 * 1024 * 1024; // read at most the last 4 MB
   try {
     if (!transcriptPath || !fs.existsSync(transcriptPath)) return 0;
-    const raw = fs.readFileSync(transcriptPath, 'utf8');
+    const size = fs.statSync(transcriptPath).size;
+    let raw;
+    if (size > TAIL_BYTES) {
+      const fd = fs.openSync(transcriptPath, 'r');
+      try {
+        const buf = Buffer.allocUnsafe(TAIL_BYTES);
+        const bytes = fs.readSync(fd, buf, 0, TAIL_BYTES, size - TAIL_BYTES);
+        raw = buf.toString('utf8', 0, bytes);
+        // Drop the first (partial) line so JSON.parse doesn't choke on it.
+        const nl = raw.indexOf('\n');
+        if (nl !== -1) raw = raw.slice(nl + 1);
+      } finally {
+        fs.closeSync(fd);
+      }
+    } else {
+      raw = fs.readFileSync(transcriptPath, 'utf8');
+    }
+
     const started = new Set();
     const completed = new Set();
     for (const line of raw.split('\n')) {
-      // Cheap prefilter: only parse tool lifecycle lines.
-      if (line.indexOf('tool.execution_') === -1) continue;
+      // Cheap prefilter: only parse subagent lifecycle lines.
+      if (line.indexOf('subagent.') === -1) continue;
       let e;
       try { e = JSON.parse(line); } catch (_) { continue; }
       const d = e && e.data;
       if (!d || !d.toolCallId) continue;
-      if (e.type === 'tool.execution_start' && d.toolName === 'task') {
+      if (e.type === 'subagent.started') {
         started.add(d.toolCallId);
-      } else if (e.type === 'tool.execution_complete') {
+      } else if (e.type === 'subagent.completed') {
         completed.add(d.toolCallId);
       }
     }
@@ -124,7 +154,8 @@ process.stdin.on('end', () => {
 
     // ── Active subagents ────────────────────────────────────────────────
     // Number of subagents currently running for this session (background or
-    // in-flight `task` invocations). Derived from the session transcript.
+    // synchronous), derived from `subagent.started`/`subagent.completed`
+    // events in the session transcript.
     const transcriptDir = data.transcript_path
       || (session ? path.join(homeDir, '.copilot', 'session-state', session) : '');
     const eventsPath = transcriptDir ? path.join(transcriptDir, 'events.jsonl') : '';
