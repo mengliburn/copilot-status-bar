@@ -160,10 +160,12 @@ process.stdin.on('end', () => {
       || (session ? path.join(homeDir, '.copilot', 'session-state', session) : '');
     const eventsPath = transcriptDir ? path.join(transcriptDir, 'events.jsonl') : '';
     const activeSubagents = countActiveSubagents(eventsPath);
-    if (activeSubagents > 0) {
-      const label = activeSubagents === 1 ? 'agent' : 'agents';
-      usage += ` \u2502 \x1b[35m\uD83E\uDD16 ${activeSubagents} ${label}\x1b[0m`;
-    }
+    // Always shown, including when idle (`0 active`), so the segment doesn't
+    // pop in and out of the status line as subagents come and go.
+    const subagentLabel = activeSubagents === 0
+      ? '0 active'
+      : `${activeSubagents} ${activeSubagents === 1 ? 'agent' : 'agents'}`;
+    usage += ` \u2502 \x1b[35m\uD83E\uDD16 ${subagentLabel}\x1b[0m`;
 
     const premium = data.cost?.total_premium_requests;
     if (typeof premium === 'number' && premium > 0) {

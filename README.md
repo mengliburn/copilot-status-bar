@@ -4,7 +4,7 @@ A rich status bar for [GitHub Copilot CLI](https://docs.github.com/copilot/how-t
 
 - **Context-window usage** — colored progress bar scaled to 80% of the model limit (green → yellow → orange → red 💀)
 - **Current in-progress task** — pulled from the session's `todos` table (if `sqlite3` is on `PATH`)
-- **Active subagents** — count of subagents currently running for the session (background or synchronous), derived from `subagent.started` / `subagent.completed` events in the session `events.jsonl` transcript; shown only when at least one is active
+- **Active subagents** — count of subagents currently running for the session (background or synchronous), derived from `subagent.started` / `subagent.completed` events in the session `events.jsonl` transcript; always shown, reading `🤖 0 active` when none are running
 - **Working directory** — basename of the current dir
 - **Premium request count** — from `cost.total_premium_requests`
 - **AI Credits (AIC)** — actual GitHub AI Credit usage for the session, read directly from the Copilot payload (`ai_used.formatted` / `ai_used.total_nano_aiu`); this is metered cost, not a token-based estimate
