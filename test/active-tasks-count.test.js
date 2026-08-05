@@ -68,7 +68,9 @@ try {
 
   const missingHome = path.join(SCRATCH, 'missing-home');
   fs.mkdirSync(missingHome, { recursive: true });
-  check('missing db -> 0 tasks shown', /📋 0 tasks\b/.test(render(missingHome, 'missing-db')));
+  const missingDbOutput = render(missingHome, 'missing-db');
+  check('missing db -> 0 tasks shown', /📋 0 tasks\b/.test(missingDbOutput));
+  check('task count uses cyan activity color', /\x1b\[36m📋 0 tasks\x1b\[0m/.test(missingDbOutput));
 
   if (hasSqlite3()) {
     const zeroHome = path.join(SCRATCH, 'zero-home');

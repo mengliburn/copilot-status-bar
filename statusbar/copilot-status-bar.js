@@ -178,12 +178,13 @@ process.stdin.on('end', () => {
 
     // ── Cost / activity (Copilot's premium request + line counts) ───────
     let usage = '';
+    const activityColor = '\x1b[36m';
 
     // ── Active tasks ───────────────────────────────────────────────────
     // Always shown, including with no open todos (`0 tasks`), so the segment
     // remains stable as session task state changes.
     const taskLabel = `${activeTasks} ${activeTasks === 1 ? 'task' : 'tasks'}`;
-    usage += ` \u2502 \x1b[34m\uD83D\uDCCB ${taskLabel}\x1b[0m`;
+    usage += ` \u2502 ${activityColor}\uD83D\uDCCB ${taskLabel}\x1b[0m`;
 
     // ── Active subagents ────────────────────────────────────────────────
     // Number of subagents currently running for this session (background or
@@ -196,7 +197,7 @@ process.stdin.on('end', () => {
     // pop in and out of the status line as subagents come and go.
     const subagentLabel =
       `${activeSubagents} ${activeSubagents === 1 ? 'agent' : 'agents'}`;
-    usage += ` \u2502 \x1b[35m\uD83E\uDD16 ${subagentLabel}\x1b[0m`;
+    usage += ` \u2502 ${activityColor}\uD83E\uDD16 ${subagentLabel}\x1b[0m`;
 
     const premium = data.cost?.total_premium_requests;
     if (typeof premium === 'number' && premium > 0) {
@@ -224,7 +225,7 @@ process.stdin.on('end', () => {
     // still 0 — so the credit meter is consistently visible. Fall back to '0'
     // when the payload carries no ai_used value yet.
     if (aicText === null) aicText = '0';
-    usage += ` \u2502 \x1b[36m${aicText} AIC\x1b[0m`;
+    usage += ` \u2502 ${activityColor}${aicText} AIC\x1b[0m`;
 
     // Numeric AIC for machine consumers: prefer the raw nano value, else parse
     // whatever text we are displaying.
