@@ -25,8 +25,9 @@ function ensureDirSecure(dir) {
 // Count subagents that are currently running for the session. Copilot CLI
 // records subagent lifecycle events in the session's `events.jsonl`
 // transcript: a `subagent.started` event when a subagent begins, and a
-// `subagent.completed` event when it finishes, matched by `toolCallId`. Any
-// `started` without a matching `completed` is still running.
+// `subagent.completed` or `subagent.failed` event when it reaches a terminal
+// state, matched by `toolCallId`. Any `started` without a matching terminal
+// event is still running.
 //
 // NB: we intentionally track the `subagent.*` lifecycle rather than the
 // `task` tool's own `tool.execution_start`/`tool.execution_complete`. For a
@@ -74,7 +75,7 @@ function countActiveSubagents(transcriptPath) {
       if (!d || !d.toolCallId) continue;
       if (e.type === 'subagent.started') {
         started.add(d.toolCallId);
-      } else if (e.type === 'subagent.completed') {
+      } else if (e.type === 'subagent.completed' || e.type === 'subagent.failed') {
         completed.add(d.toolCallId);
       }
     }
@@ -186,8 +187,7 @@ process.stdin.on('end', () => {
 
     // ── Active subagents ────────────────────────────────────────────────
     // Number of subagents currently running for this session (background or
-    // synchronous), derived from `subagent.started`/`subagent.completed`
-    // events in the session transcript.
+    // synchronous), derived from subagent lifecycle events in the transcript.
     const transcriptDir = data.transcript_path
       || (session ? path.join(homeDir, '.copilot', 'session-state', session) : '');
     const eventsPath = transcriptDir ? path.join(transcriptDir, 'events.jsonl') : '';

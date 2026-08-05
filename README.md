@@ -111,7 +111,7 @@ Key fields consumed:
 |---|---|
 | `workspace.current_dir`, `cwd` | Directory segment |
 | `session_id` | Locate `~/.copilot/session-state/<id>/session.db` to read the active todo title and count active tasks (`pending` + `in_progress`) |
-| `transcript_path`, `session_id` | Locate `events.jsonl`; count `subagent.started` minus `subagent.completed` (by `toolCallId`) for active subagents |
+| `transcript_path`, `session_id` | Locate `events.jsonl`; count `subagent.started` minus terminal `subagent.completed` or `subagent.failed` events (by `toolCallId`) for active subagents |
 | `context_window.current_context_used_percentage` | Context bar |
 | `context_window.remaining_percentage` | Context bar fallback |
 | `ai_used.formatted`, `ai_used.total_nano_aiu` | AI Credits (AIC) used |

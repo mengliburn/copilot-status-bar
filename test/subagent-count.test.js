@@ -2,7 +2,7 @@
 // Regression tests for the active-subagents segment.
 //
 // The status bar counts subagents that are currently running by tracking
-// `subagent.started` / `subagent.completed` events in the session
+// `subagent.started` / `subagent.completed` / `subagent.failed` events in the session
 // `events.jsonl` transcript (matched by `toolCallId`). Crucially it must NOT
 // key off the `task` tool call: for a *background* subagent the `task` tool
 // call completes immediately while the subagent keeps running, so keying off
@@ -89,7 +89,13 @@ check('no subagents -> 0 agents shown', /🤖 0 agents\b/.test(render([
   ev('tool.execution_start', { toolCallId: 'b1', toolName: 'bash' }),
 ])));
 
-// 6. Malformed / partial lines are skipped without breaking output.
+// 6. Failed subagents are terminal and must not remain stale in the count.
+check('failed subagent -> 0 agents shown', /🤖 0 agents\b/.test(render([
+  ev('subagent.started', { toolCallId: 's1' }),
+  ev('subagent.failed', { toolCallId: 's1', error: 'startup failed' }),
+])));
+
+// 7. Malformed / partial lines are skipped without breaking output.
 check('malformed lines are tolerated', /🤖 1 agent\b/.test(render([
   '{ this is not json',
   ev('subagent.started', { toolCallId: 's1' }),
